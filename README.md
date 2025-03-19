@@ -16,4 +16,23 @@ By integrating **wearable technology, IoT, and smart automation**, our project o
 
 ---
 
-🔗 Stay tuned for updates and contributions! 🚀
+## System Components
+- **Automated Dispenser & Multiplexer Control**  
+  Utilizes a servo-controlled dispenser and a multiplexer system to manage multiple medication sectors. The dispenser is activated via sensor inputs and ensures proper dosing using NFC identification.
+  
+- **Sensor Integration**  
+  - **IR Sensor:** Detects the presence of objects for safe dispenser operation.  
+  - **Laser Sensor:** Monitors the dispenser’s status (e.g., checking if the medicine compartment is open).  
+  - **Touch Sensor:** Allows users to interact with the system to acknowledge alerts.
+
+- **Audio Alerts**  
+  The DFPlayer Mini is integrated to play audio alerts and notifications. An AudioPlayer class handles track selection, volume control, and playback, ensuring that patients are alerted audibly when it’s time to take their medication.
+
+- **WiFi & Time Synchronization**  
+  The system connects to WiFi to synchronize time using an NTP client. This guarantees accurate scheduling for medication dispensing and alerts.
+
+- **LCD Display**  
+  A LiquidCrystal_I2C display provides real-time status updates, including the current time and battery status, with custom characters for a visually appealing interface.
+
+
+*BiTechX is dedicated to merging cutting-edge technology with healthcare solutions for a safer, more reliable medication management system.*
