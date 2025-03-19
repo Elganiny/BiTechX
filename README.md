@@ -1,4 +1,4 @@
-# BiTechX: Smart Health Monitoring & Medication Management System  
+# BiTechX: Smart Medication Dispenser 💊
 
 ## 🚀 Overview  
 Millions of people suffer from chronic diseases, requiring continuous monitoring and timely medication. Many elderly individuals and patients struggle with remembering medication schedules, keeping up with doctor visits, or dealing with unexpected health issues. Our project aims to **bridge the gap between patients, caregivers, and doctors** by providing an **intelligent and connected health management system**.  
