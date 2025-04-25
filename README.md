@@ -18,11 +18,10 @@ By integrating **wearable technology, IoT, and smart automation**, our project o
 
 ## System Components
 - **Automated Dispenser & Multiplexer Control**  
-  Utilizes a servo-controlled dispenser and a multiplexer system to manage multiple medication sectors. The dispenser is activated via sensor inputs and ensures proper dosing using NFC identification.
-  
+  Utilizes a multiplexer system to manage multiple medication sectors. The dispenser is activated via sensor inputs and ensures proper dosing 
 - **Sensor Integration**  
   - **IR Sensor:** Detects the presence of objects for safe dispenser operation.  
-  - **Laser Sensor:** Monitors the dispenser’s status (e.g., checking if the medicine compartment is open).  
+  - **Laser Sensor:** Monitors the dispenser’s status (e.g., checking if the pill has dispensed from sector).  
   - **Touch Sensor:** Allows users to interact with the system to acknowledge alerts.
 
 - **Audio Alerts**  
