@@ -1,9 +1,8 @@
 /********************** Icludes **********************/
-
+#include <WiFi.h>
+#include <Firebase_ESP_Client.h>
 #include <Arduino.h>
 #include <ESP32Servo.h>
-#include "AudioPlayer.h"
-#include <WiFi.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include "DFRobotDFPlayerMini.h"
@@ -12,27 +11,65 @@
 
 /********************** Wifi & Firebase **********************/
 
-const char* ssid = "MIDO";
-const char* password = "a0102005588e";
+#include <WiFi.h>
+#include <Firebase_ESP_Client.h>
+
+/*  WiFi */
+#define WIFI_SSID "MIDO"
+#define WIFI_PASSWORD "a0102005588e"
+
+/*  Firebase API */
+#define API_KEY "AIzaSyCrST7GnkApOy_VI-XkLk27MN9ETvSbeZ0"
+
+/* Firebase URL */
+#define DATABASE_URL "https://test-16784-default-rtdb.firebaseio.com/" 
+
+/* Login */
+#define USER_EMAIL "ae1652003@gmail.com"
+#define USER_PASSWORD "123456"
+
+/* Firebase Objects */
+FirebaseData fbdo;
+FirebaseAuth auth;
+FirebaseConfig config;
+
+/* changing time */
+unsigned long sendDataPrevMillis = 0;
+
+/* Medicines Struct */
+struct Medicine {
+    String name;
+    int hour;
+    int minute;
+    int state;
+    int num;
+};
+
+/* Medicines Array */
+Medicine medicines[8];
+
 
 /********************** Pins **********************/
 
-#define SERVO_PIN 6
-#define LED_MUX_S0 7
-#define LED_MUX_S1 8
-#define LED_MUX_S2 9
-#define BUZZER_PIN 13
-#define IR_SENSOR_PIN 2
+#define SERVO_PIN 2  
+#define LED_MUX_S0 4
+#define LED_MUX_S1 5
+#define LED_MUX_S2 33
+#define BUZZER_PIN 22
 #define MOTOR_MUX_S0 10
-#define MOTOR_MUX_S1 11
-#define MOTOR_MUX_S2 12
+#define MOTOR_MUX_S1 18
+#define MOTOR_MUX_S2 19
+#define IR_SENSOR_PIN 21
 #define LED_ENABLE_PIN 14 // Added LED control pin
-#define LASER_SENSOR_PIN 3
-#define TOUCH_SENSOR_PIN 4
-#define MOTOR_ENABLE_PIN 5
+#define LASER_SENSOR_PIN 15
+#define TOUCH_SENSOR_PIN 12
+#define MOTOR_ENABLE_PIN 13
 
 /********************** Function Declaration **********************/
-
+void readMedicines();
+void Initialize();
+int WhichSector();
+bool is_time(int sector);
 bool detectIR();
 void openServo();
 void closeServo();
@@ -70,14 +107,13 @@ byte bat[] = {
 #define NUM_SECTORS 8
 WiFiUDP ntpUDP;
 bool touch_flag=0;
-AudioPlayer player;
 char battery_percent;
 Servo dispenserServo;
 char Medicine_name[50];
 unsigned long sectorTime = 5000;
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 bool activeSectors[NUM_SECTORS] = {false};
-int esp_Hour,esp_minute,Medicine_Hour,Medicine_Minute,Medicine_Dosesl,Medecine_Sector;
+int esp_Hour,esp_minute,Medicine_Hour,Medicine_Minute,Medicine_Doses,Medecine_Sector,medicineTime;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 7200, 60000); // 0 is UTC offset, 60000ms update interval
 
 /********************** Audio **********************/

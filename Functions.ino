@@ -1,28 +1,34 @@
 void Initialize()
 {
-  //lcd battery and time 
- Serial.begin(115200);
+  /****************Lcd Battery and time***************/
     lcd.init();
     lcd.createChar(0, pill);
     lcd.createChar(1, bat);
     lcd.setCursor(0, 0);
      lcd.print("Time:");
-   if(!player.Init()) 
-    {
-        Serial.println("Failed to initialize audio player!");
-        while(1); /** If initialization fails, Stop the program **/
-    }
-     WiFi.begin(ssid, password);
-    Serial.print("Connecting to WiFi");
+   /****************Wifi & Firebase***************/
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    Serial.print("Connecting to Wi-Fi");
     while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
         Serial.print(".");
+        delay(300);
     }
-    Serial.println("\nWifi Connected!");
-
+    Serial.println("\nConnected with IP: " + WiFi.localIP().toString());
+    /*Firebase Setting */
+    config.api_key = API_KEY;
+    auth.user.email = USER_EMAIL;
+    auth.user.password = USER_PASSWORD;
+    config.database_url = DATABASE_URL;
+    Firebase.reconnectNetwork(true);
+    fbdo.setBSSLBufferSize(4096, 1024);
+    fbdo.setResponseSize(2048);
+    Firebase.begin(&config, &auth);
+    Firebase.setDoubleDigits(5);
+    config.timeout.serverResponse = 10 * 1000;
+   /********************************************/
     // Start NTP client
-    Audio_Init();
-    timeClient.begin();  
+  //  Audio_Init();
+      timeClient.begin();  
     /*********************************************************/
     pinMode(IR_SENSOR_PIN, INPUT);
     pinMode(LASER_SENSOR_PIN, INPUT);
@@ -30,6 +36,12 @@ void Initialize()
     pinMode(MOTOR_ENABLE_PIN, OUTPUT);
     pinMode(LED_ENABLE_PIN, OUTPUT);
     pinMode(BUZZER_PIN, OUTPUT);
+    pinMode(LED_MUX_S0,OUTPUT);
+    pinMode(LED_MUX_S1,OUTPUT);
+    pinMode(LED_MUX_S2,OUTPUT);
+    pinMode(MOTOR_MUX_S0,OUTPUT);
+    pinMode(MOTOR_MUX_S1,OUTPUT);
+    pinMode(MOTOR_MUX_S2,OUTPUT);
     dispenserServo.attach(SERVO_PIN);
     digitalWrite(MOTOR_ENABLE_PIN, LOW);
     digitalWrite(LED_ENABLE_PIN, LOW);
@@ -55,12 +67,12 @@ bool detectTouch() {
 }
 
 void activateMotor(int sector) {
-    selectMultiplexerChannel(selectedSector, MOTOR_MUX_S0, MOTOR_MUX_S1, MOTOR_MUX_S2);
+    selectMultiplexerChannel(sector, MOTOR_MUX_S0, MOTOR_MUX_S1, MOTOR_MUX_S2);
     digitalWrite(MOTOR_ENABLE_PIN, HIGH); // LOW if active low
-    selectMultiplexerChannel(selectedSector, LED_MUX_S0, LED_MUX_S1, LED_MUX_S2);
+    selectMultiplexerChannel(sector, LED_MUX_S0, LED_MUX_S1, LED_MUX_S2);
     digitalWrite(LED_ENABLE_PIN, HIGH); // Turn on LED
     unsigned long startTime = millis();
-    while (!detectLaser() && (millis() - startTime < sectorTime)) {
+    while (!detectLaser() && ((millis() - startTime ) < sectorTime)) {
         // Keep motor on
     }
     digitalWrite(MOTOR_ENABLE_PIN, LOW);
@@ -77,15 +89,16 @@ void closeServo() {
    
         dispenserServo.write(0);
         
-    selectMultiplexerChannel(selectedSector, LED_MUX_S0, LED_MUX_S1, LED_MUX_S2);
+    selectMultiplexerChannel(Medecine_Sector, LED_MUX_S0, LED_MUX_S1, LED_MUX_S2);
     digitalWrite(LED_ENABLE_PIN, LOW); // Ensure LED turns off
+            lcd.setCursor(0, 1);
+            lcd.print("                          ");
 }
 
 void alertMedicineTime() {
-    if (millis() >= medicineTime) {
-        selectMultiplexerChannel(selectedSector, LED_MUX_S0, LED_MUX_S1, LED_MUX_S2);
+        selectMultiplexerChannel(Medecine_Sector, LED_MUX_S0, LED_MUX_S1, LED_MUX_S2);
         digitalWrite(LED_ENABLE_PIN, HIGH); // Turn on LED
-        digitalWrite(BUZZER_PIN, HIGH); // Turn on buzzer
+        player.PlayTrack(9); // Turn on buzzer
         unsigned long alertStart = millis();
         while (millis() - alertStart < 600000) { // 10 minutes alert duration
             if (detectTouch()) {
@@ -94,8 +107,61 @@ void alertMedicineTime() {
             }
         }
         digitalWrite(BUZZER_PIN, LOW); // Turn off buzzer after 10 minutes
+}
+
+bool is_time(int sector)
+{
+  get_time();
+  sector--;
+  if((medicines[sector].hour == esp_Hour ) &&  !(esp_minute < medicines[sector].minute) && ((medicines[sector].minute)+10 >= esp_minute))
+  {
+    return true;
+  }
+ touch_flag=0;
+  return false;
+}
+
+void get_time()
+{
+   timeClient.update();
+  esp_Hour= timeClient.getHours();
+  esp_minute= timeClient.getMinutes();
+}
+
+void print_time()
+{
+  lcd.setCursor(5, 0);
+  lcd.print(String(esp_Hour) + ":" + String(esp_minute));
+  lcd.write(1);
+  lcd.print(battery_percent);
+  lcd.print("%");   
+}
+
+void readMedicines() {
+   String path = "/patient1";  
+
+    for (int i = 0; i < 8; i++) {
+        String medicinePath = path + "/medicine" + String(i+1);
+
+        Firebase.RTDB.getInt(&fbdo, medicinePath + "/medicine_hour", &medicines[i].hour);
+        Firebase.RTDB.getInt(&fbdo, medicinePath + "/medicine_minute", &medicines[i].minute);
+        Firebase.RTDB.getInt(&fbdo, medicinePath + "/medicine_state", &medicines[i].state);
+        Firebase.RTDB.getInt(&fbdo, medicinePath + "/medicine_num", &medicines[i].num);
+        Firebase.RTDB.getString(&fbdo, medicinePath + "/medicine_name");
+        medicines[i].name = fbdo.stringData();
     }
 }
+
+ int WhichSector()
+ {
+  for (int i = 0; i < 8; i++) {
+      if((medicines[i].state)==1)
+      {
+        return i+1;
+      }  
+    }
+ }
+/*******************************************************************************************/
 /**
  * Constructor: Initializes the playerSerial pointer to use UART2 (Serial2).
  */
